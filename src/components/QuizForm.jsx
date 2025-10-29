@@ -11,7 +11,7 @@ export default function QuizForm({ onStart }) {
     setError('')
     if (!topic.trim()) return setError('Please enter a topic')
     const n = Number(count)
-    if (!n || n < 1 || n > 50) return setError('Please enter number between 1 and 50')
+    if (!n || n < 1 || n > 21) return setError('Please enter number between 1 and 50')
     onStart({ topic: topic.trim(), count: n })
   }
 
