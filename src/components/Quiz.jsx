@@ -32,6 +32,7 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
 
   const pageSize = 1
 
+  // Fetch quiz on mount
   useEffect(() => {
     async function fetchQuiz() {
       if (!topic) return
@@ -40,12 +41,15 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
         setError(null)
 
         const { data } = await axios.post(
-          'https://quizzly-backend-2.onrender.com/quiz',
+          'https://quizzly-backend-1.onrender.com/quiz',
           { topic, count },
           { headers: { 'Content-Type': 'application/json' } }
         )
 
-        setQuestions(data || [])
+
+        // IMPORTANT FIX — data.quiz required
+        setQuestions(data.quiz || [])
+
         setPage(0)
       } catch (err) {
         console.error('Failed to fetch quiz:', err)
@@ -63,11 +67,11 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
   const currentQuestion = questions[page]
 
   function handleSelect(optId) {
-    setAnswers((a) => ({ ...a, [currentQuestion.id]: optId }))
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: optId }))
   }
 
   const score = useMemo(() => {
-    return questions.reduce((sum, q) => {
+    return (questions || []).reduce((sum, q) => {
       const sel = answers[q.id]
       if (!sel) return sum
       const opt = q.options.find((o) => o.id === sel)
@@ -93,12 +97,12 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
     setSubmitted(false)
   }
 
-  // Loading state
+  // Loading UI
   if (loading) {
     return (
       <div className="quiz-root">
-        <div className="card quiz-card loading-card" role="status" aria-live="polite">
-          <div className="loading-bar" aria-hidden>
+        <div className="card quiz-card loading-card">
+          <div className="loading-bar">
             <div className="loading-indeterminate" />
           </div>
           <p className="loading-text">Loading quiz...</p>
@@ -107,12 +111,12 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
     )
   }
 
-  // Error state
+  // Error UI
   if (error) {
     return (
       <div className="quiz-root">
         <div className="card">
-          <h2 style={{color: "red"}}>Error</h2>
+          <h2 style={{ color: "red" }}>Error</h2>
           <p>{error}</p>
           <button className="btn" onClick={() => window.location.reload()}>
             Retry
@@ -122,8 +126,8 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
     )
   }
 
-  // Empty questions state
-  if (questions.length === 0) {
+  // No questions
+  if (!Array.isArray(questions) || questions.length === 0) {
     return (
       <div className="quiz-root">
         <div className="card">
@@ -133,14 +137,16 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
     )
   }
 
+  // Results page
   if (submitted) {
     return (
       <div className="quiz-root">
         <div className="results card">
-          <h2 style={{color:"black"}}>Results</h2>
-          <p className="score" style={{color:"green"}}>
+          <h2>Results</h2>
+          <p className="score" style={{ color: "green" }}>
             Your score: <strong>{score}</strong> / {questions.length}
           </p>
+
           <div className="breakdown">
             {questions.map((q) => {
               const sel = answers[q.id]
@@ -163,6 +169,7 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
               )
             })}
           </div>
+
           <div className="results-actions">
             <button className="btn" onClick={reset}>Try Again</button>
           </div>
@@ -190,6 +197,7 @@ export default function Quiz({ topic = 'javascript', count = 5 }) {
             <button className="btn ghost" onClick={prev} disabled={page === 0}>
               Previous
             </button>
+
             {page < totalPages - 1 ? (
               <button className="btn" onClick={next}>Next</button>
             ) : (
